@@ -1,5 +1,6 @@
 #define Cell int
 #include <iostream>
+//#include "Cell.cpp"
 using namespace std;
 class Field
 {
@@ -7,8 +8,10 @@ class Field
 		int heigth;
 		int width;
 		Cell **turn, **nextturn;
+		int **status, **nextstatus;
 		Cell** createEmptyArray();
 		int checkNeighbors(int, int);
+		void neighborsstat(int i, int j, int**);
 		void del(Cell**);
 		
 	public:
@@ -16,6 +19,7 @@ class Field
 		~Field();
 		void consolePrint();
 		void refresh();
+		void initialize();
 };
 
 Field::Field(int h, int w)
@@ -25,36 +29,15 @@ Field::Field(int h, int w)
 	
 	turn = createEmptyArray();
 	nextturn = createEmptyArray();
-	
-	turn[7][0]=1;
-	turn[7][1]=1;
-	turn[7][2]=1;
-	
-	turn[2][7]=1;
-	turn[3][7]=1;
-	turn[4][7]=1;
-	
-	turn[3][10]=1;
-	turn[3][9]=1;
-	turn[3][8]=1;
-	
-	turn[6][4]=1;
-	turn[6][5]=1;
-	turn[6][6]=1;
-	turn[5][6]=1;
-	turn[4][5]=1;
-	
-	turn[9][4]=1;
-	turn[9][5]=1;
-	turn[9][6]=1;
-	turn[8][6]=1;
-	turn[7][5]=1;
+	status = createEmptyArray();
 }
 
 Field::~Field()
 {
 	del(turn);
 	del(nextturn);
+	del(status);
+	del(nextstatus);
 }
 
 Cell** Field::createEmptyArray()
@@ -81,18 +64,89 @@ void Field::del(Cell**arr)
 	delete [] arr;
 }
 
+//void Field::refresh()
+//{
+//	nextturn = createEmptyArray();
+//	for (int i=0; i < this->heigth; i++)
+//	{
+//		for (int j=0; j < this->width; j++)
+//		{
+//			nextturn[i][j] = checkNeighbors(i,j);
+//		}
+//	}
+//	del(turn);
+//	turn = nextturn;
+//}
+
 void Field::refresh()
 {
-	nextturn = createEmptyArray();
+	nextstatus = createEmptyArray();
 	for (int i=0; i < this->heigth; i++)
 	{
 		for (int j=0; j < this->width; j++)
 		{
-			nextturn[i][j] = checkNeighbors(i,j);
+			if ((status[i][j]==3)||(status[i][j]==2 && turn[i][j]))
+			{
+				turn[i][j]=1;
+				neighborsstat(i,j,nextstatus);
+			}
+			else turn[i][j]=0;
 		}
 	}
-	del(turn);
-	turn = nextturn;
+	del(status);
+	status = nextstatus;
+}
+
+
+void Field::initialize()
+{
+	turn[7][0]=1;
+	turn[7][1]=1;
+	turn[7][2]=1;
+	
+	turn[2][7]=1;
+	turn[3][7]=1;
+	turn[4][7]=1;
+	
+	turn[3][10]=1;
+	turn[3][9]=1;
+	turn[3][8]=1;
+	
+	turn[6][4]=1;
+	turn[6][5]=1;
+	turn[6][6]=1;
+	turn[5][6]=1;
+	turn[4][5]=1;
+	
+	turn[9][4]=1;
+	turn[9][5]=1;
+	turn[9][6]=1;
+	turn[8][6]=1;
+	turn[7][5]=1;
+	
+	for (int i=0; i < this->heigth; i++)
+	{
+		for (int j=0; j < this->width; j++)
+		{
+			if (turn[i][j])
+			{
+				neighborsstat(i,j,status);
+			}
+		}
+	}
+	
+}
+
+void Field::neighborsstat(int i, int j, int** st)
+{	
+	for (int n=-1; n <= 1; n++)
+	{
+		for (int m=-1; m<=1; m++)
+		{
+			st[(i-n+this->heigth)%this->heigth][(j-m+this->width)%this->width]++;
+		}
+	}
+	st[i][j]--;
 }
 
 int Field::checkNeighbors(int n, int m)

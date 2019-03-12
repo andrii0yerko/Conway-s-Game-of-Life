@@ -5,13 +5,23 @@
 using namespace std;
 int main()
 {
-	Field field(25,25);
+	Field field(25,40);
+	field.initialize();
+	/*
+	field.consolePrint();
+	getch();
 	while (1)
 	{
 		system("cls");
-		field.consolePrint();
 		field.refresh();
-		Sleep(100);
-		//getch();
+		field.consolePrint();
+		Sleep(50);
+	}
+	*/
+	for(int i=0; i<1000; i++)
+	{
+		field.refresh();
+		field.consolePrint();
+		system("cls");
 	}
 }
