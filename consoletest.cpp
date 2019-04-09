@@ -1,27 +1,33 @@
 #include "Conwaysgameoflife.cpp"
-#include <iostream>
+//#include <iostream>
 #include <conio.h>
 #include <windows.h>
 using namespace std;
 int main()
 {
-	Field field(25,40);
+	
+	HANDLE consoleHandle = 0;
+	consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+	
+	Settings_struct set;
+	set.heigth = 21;
+	set.width = 72;
+	
+	Field field(consoleHandle,set);
 	field.initialize();
-	/*
 	field.consolePrint();
-	getch();
+
+	int Key = getch();
 	while (1)
 	{
-		system("cls");
-		field.refresh();
-		field.consolePrint();
-		Sleep(50);
+		if (Key!=27)
+		{
+			field.refresh();
+			field.consolePrint();
+		}
+		
+		if (_kbhit()) Key = getch();
 	}
-	*/
-	for(int i=0; i<1000; i++)
-	{
-		field.refresh();
-		field.consolePrint();
-		system("cls");
-	}
+	
+	return 1;
 }
