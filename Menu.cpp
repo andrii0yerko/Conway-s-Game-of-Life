@@ -7,7 +7,7 @@
 #include <windows.h>
 
 #include "constants.h"
-#include "Conwaysgameoflife.cpp"
+#include "Field.cpp"
 
 
 char logo[17][28] = { 
@@ -36,7 +36,8 @@ char logo[17][28] = {
 //gameResponse
 //settings
 //render
-///graphics?
+//Help
+//About
 
 class Menu
 {
@@ -73,7 +74,7 @@ class Menu
 		int selected_element = 0;
 		int *feedback;
 		HANDLE h;
-		Settings_struct settings = {23, 74, Rpentomino};
+		Settings_struct settings = {50, 74, Rpentomino};
 		Settings_struct tmp_settings;
 				
 };
@@ -306,6 +307,12 @@ void Menu::gameResponse(int Key)
 	switch (Key)
 	{
 		case KEY_ESCAPE:
+			
+			COORD crd = {CONSOLE_WIDTH-1, CONSOLE_HEIGTH-1};
+			SMALL_RECT src = {0, 0, crd.X, crd.Y};
+			SetConsoleScreenBufferSize (h, crd);
+			SetConsoleWindowInfo (h, TRUE, &src);
+			
 			pauseMenu();
 			SetConsoleTextAttribute(h, ATTR2);
 			system("cls");
@@ -339,6 +346,8 @@ HANDLE setup()
 
 int main()
 {
+	SMALL_RECT src;
+	COORD crd;
 	int flag = gameInactive;
 	HANDLE h = setup();
 	Menu menu(h, &flag);
@@ -358,6 +367,12 @@ int main()
 			case gameUpdate:
 				field.setSettings(menu.getSettings());
 			case gameStart:
+				
+				crd = {CONSOLE_WIDTH-1, menu.getSettings().heigth};
+				src = {0, 0, crd.X, crd.Y};
+				SetConsoleScreenBufferSize (h, crd);
+				SetConsoleWindowInfo (h, TRUE, &src);
+				
 				field.consolePrint();
 				break;
 			case gameActive:

@@ -49,7 +49,7 @@ Field& Field::setSettings(Settings_struct set)
 	heigth = set.heigth;
 	width = set.width;
 	corner.X = (CONSOLE_WIDTH - width)/2;
-	corner.Y = (CONSOLE_HEIGTH - heigth)/2;
+	corner.Y = 1;
 	
 	turnNumber = 0;
 	
@@ -97,6 +97,7 @@ Field& Field::setSettings(Settings_struct set)
 
 Field::~Field()
 {
+	del(buffer);
 	del(turn);
 	del(status);
 	del(nextstatus);
@@ -160,44 +161,6 @@ bool Field::refresh()
 	return true;
 }
 
-
-void Field::initialize()
-{
-	/*
-	turn[8][7]=1;
-	turn[7][7]=1;
-	turn[6][7]=1;
-	turn[6][8]=1;
-	turn[7][6]=1;
-	
-	turn[8][12]=1;
-	turn[7][12]=1;
-	turn[6][12]=1;
-	turn[6][13]=1;
-	turn[7][11]=1;
-	*/
-	
-	turn[6][11]=1;
-	turn[6][12]=1;
-	turn[6][15]=1;
-	turn[6][16]=1;
-	turn[6][17]=1;
-	turn[7][14]=1;
-	turn[8][12]=1;
-	
-	
-	for (int i=0; i < this->width; i++)
-	{
-		for (int j=0; j < this->heigth; j++)
-		{
-			if (turn[i][j])
-			{
-				neighborsstat(i,j,status);
-			}
-		}
-	}
-	
-}
 
 void Field::neighborsstat(int i, int j, int** st)
 {	
