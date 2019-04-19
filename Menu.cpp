@@ -38,6 +38,7 @@ char logo[17][28] = {
 //render
 //Help
 //About
+//fix random
 
 class Menu
 {
@@ -60,7 +61,7 @@ class Menu
 		void pauseMenu();
 		Settings_struct& getSettings();
 		
-		void (Menu::*response)(int) = mainMenuResponse;
+		void (Menu::*response)(int) = &Menu::mainMenuResponse;
 		
 		
 	private:
@@ -68,13 +69,13 @@ class Menu
 		char setting_elements[num_of_settings_elements][16] = {"Heigth", "Width", "Initial Pattern", "Save", "Cancel"};
 		char pattern_names[5][13] = {"R-pentomino", "Acorn", "Game of Life", "Random", "Custom"};
 		
-		void (Menu::*element_functions[6])() = {&Restart, &Settings, &Help, &About, &Exit};
+		void (Menu::*element_functions[6])() = {&Menu::Restart, &Menu::Settings, &Menu::Help, &Menu::About, &Menu::Exit};
 		int num_of_elements = 5;
 		
 		int selected_element = 0;
 		int *feedback;
 		HANDLE h;
-		Settings_struct settings = {50, 74, Rpentomino};
+		Settings_struct settings = {45, 74, Random};
 		Settings_struct tmp_settings;
 				
 };
@@ -95,7 +96,7 @@ void Menu::pauseMenu()
 	char tmp_names[6][10] = {"Continue", "Restart", "Settings", "Help", "About", "Exit"};
 
 	
-	void (Menu::*tmp_functions[6])() = {&Game, &Restart, &Settings, &Help, &About, &Exit};
+	void (Menu::*tmp_functions[6])() = {&Menu::Game, &Menu::Restart, &Menu::Settings, &Menu::Help, &Menu::About, &Menu::Exit};
 	for(int i=0; i<num_of_elements;i++)
 	{
 		strcpy(element_names[i],tmp_names[i]);
@@ -123,7 +124,7 @@ void Menu::mainMenuDraw()
 	for (int i = 0; i < 17; i++)
 	{
 		cc.X = 19+14;
-		cc.Y = 4+i;
+		cc.Y = (CONSOLE_HEIGTH-17)/2+i;
 		SetConsoleCursorPosition(h, cc);
 		printf("%s", logo[i]);
 	}
@@ -229,7 +230,7 @@ void Menu::settingsResponse(int Key)
 		{ 
 			selected_element = 0;
 			mainMenuDraw();
-			response = mainMenuResponse;
+			response = &Menu::mainMenuResponse;
 			if (selected_element!=num_of_settings_elements-1) break;
 			settings = tmp_settings;
 			break;
@@ -257,7 +258,7 @@ void Menu::Restart()
 {
 	SetConsoleTextAttribute(h, ATTR4);
 	system("cls");
-	response = gameResponse;
+	response = &Menu::gameResponse;
 	*feedback = gameUpdate;
 }
 
@@ -265,7 +266,7 @@ void Menu::Game()
 {
 	SetConsoleTextAttribute(h, ATTR4);
 	system("cls");
-	response = gameResponse;
+	response = &Menu::gameResponse;
 	*feedback = gameStart;
 };
 void Menu::Help() 
@@ -287,15 +288,13 @@ void Menu::Settings()
 {
 	tmp_settings = settings;
 	settingsDraw();
-	response = settingsResponse;
+	response = &Menu::settingsResponse;
 };
 
 void Menu::Exit()
 {
 	exit(0);
 }
-
-
 
 
 void Menu::gameResponse(int Key)
@@ -317,7 +316,7 @@ void Menu::gameResponse(int Key)
 			SetConsoleTextAttribute(h, ATTR2);
 			system("cls");
 			mainMenuDraw();
-			response = mainMenuResponse;
+			response = &Menu::mainMenuResponse;
 			*feedback = gameInactive;	
 	}
 }
@@ -340,6 +339,11 @@ HANDLE setup()
 	SetConsoleCursorInfo( h, &structCursorInfo );
 	
 	SetConsoleTextAttribute(h, ATTR2);
+	
+	COORD crd = {CONSOLE_WIDTH-1, CONSOLE_HEIGTH-1};
+	SMALL_RECT src = {0, 0, crd.X, crd.Y};
+	SetConsoleScreenBufferSize (h, crd);
+	SetConsoleWindowInfo (h, TRUE, &src);
 	return h;
 }
 
@@ -374,6 +378,7 @@ int main()
 				SetConsoleWindowInfo (h, TRUE, &src);
 				
 				field.consolePrint();
+				flag = gameInactive;
 				break;
 			case gameActive:
 				if (field.refresh()) field.consolePrint();
@@ -381,8 +386,5 @@ int main()
 				break;
 			//system("pause");
 		}
-		
-		
-		
 	}
 }

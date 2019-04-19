@@ -13,7 +13,7 @@
 #define ATTR4 0x0A
 
 #define CONSOLE_WIDTH 80
-#define CONSOLE_HEIGTH 25
+#define CONSOLE_HEIGTH 31
 
 enum gameStatus
 {
