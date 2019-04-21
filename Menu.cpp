@@ -31,14 +31,13 @@ char logo[17][28] = {
 
 
 #define num_of_settings_elements 5
+#define num_of_patterns 6
 
 //////TO DO LIST
 //gameResponse
-//settings
 //render
-//Help
+//Help                                         
 //About
-//fix random
 
 class Menu
 {
@@ -65,17 +64,26 @@ class Menu
 		
 		
 	private:
-		char element_names[6][10] = {"Game", "Settings", "Help", "About", "Exit"};
-		char setting_elements[num_of_settings_elements][16] = {"Heigth", "Width", "Initial Pattern", "Save", "Cancel"};
-		char pattern_names[5][13] = {"R-pentomino", "Acorn", "Game of Life", "Random", "Custom"};
+		char* pause_menu[10] = {"Continue", "Restart", "Settings", "Help", "About", "Exit"};
+		char* default_menu[10] = {"Game", "Settings", "Help", "About", "Exit"};
+		char** menu_elements = default_menu;
 		
-		void (Menu::*element_functions[6])() = {&Menu::Restart, &Menu::Settings, &Menu::Help, &Menu::About, &Menu::Exit};
+		void (Menu::*default_menu_functions[6])() = {&Menu::Restart, &Menu::Settings, &Menu::Help, &Menu::About, &Menu::Exit};
+		void (Menu::*pause_menu_functions[6])() = {&Menu::Game, &Menu::Restart, &Menu::Settings, &Menu::Help, &Menu::About, &Menu::Exit};
+		
+		void (Menu::**menu_functions)() = default_menu_functions;
+		
+		
+		char setting_elements[num_of_settings_elements][16] = {"Heigth", "Width", "Initial Pattern", "Save", "Cancel"};
+		char *pattern_names[num_of_patterns]  = {"R-pentomino", "Acorn", "Game of Life", "Gosper`s glider gun", "Random", "Custom"};
+		
+		
 		int num_of_elements = 5;
 		
 		int selected_element = 0;
 		int *feedback;
 		HANDLE h;
-		Settings_struct settings = {45, 74, Random};
+		Settings_struct settings = {25, 80, Random};
 		Settings_struct tmp_settings;
 				
 };
@@ -93,20 +101,19 @@ void Menu::pauseMenu()
 {
 	if (6==num_of_elements) return;
 	num_of_elements++;
-	char tmp_names[6][10] = {"Continue", "Restart", "Settings", "Help", "About", "Exit"};
-
-	
-	void (Menu::*tmp_functions[6])() = {&Menu::Game, &Menu::Restart, &Menu::Settings, &Menu::Help, &Menu::About, &Menu::Exit};
-	for(int i=0; i<num_of_elements;i++)
-	{
-		strcpy(element_names[i],tmp_names[i]);
-		element_functions[i] = tmp_functions[i];
-	}
+	menu_elements = pause_menu;
+	menu_functions = pause_menu_functions;
 }
+
 
 
 void Menu::mainMenuDraw() 
 {
+	COORD crd = {CONSOLE_WIDTH-1, CONSOLE_HEIGTH-1};
+	SMALL_RECT src = {0, 0, crd.X, crd.Y};
+	SetConsoleScreenBufferSize (h, crd);
+	SetConsoleWindowInfo (h, TRUE, &src);	
+	
 	system("cls");
 	SetConsoleTextAttribute(h, ATTR1);
 	COORD cc;
@@ -117,23 +124,23 @@ void Menu::mainMenuDraw()
 		cc.Y = margin + (i * CONSOLE_HEIGTH / num_of_elements);
 		cc.X = margin*2;
 		SetConsoleCursorPosition(h, cc);
-		printf("%s", element_names[i]);
+		printf("%s", menu_elements[i]);
 	}
 	
 	SetConsoleTextAttribute(h, ATTR3);
 	for (int i = 0; i < 17; i++)
 	{
-		cc.X = 19+14;
+		cc.X = margin*2+10 + (CONSOLE_WIDTH -(margin*2+10)-27)/2;
 		cc.Y = (CONSOLE_HEIGTH-17)/2+i;
 		SetConsoleCursorPosition(h, cc);
 		printf("%s", logo[i]);
 	}
-	
-	cc.Y = margin + (selected_element * CONSOLE_HEIGTH / num_of_elements);
-	cc.X = margin*2;
-	SetConsoleTextAttribute(h, ATTR2);
-	SetConsoleCursorPosition(h, cc);
-	printf("%s%s","> ",element_names[selected_element]);
+	mainMenuUpdate(0);
+//	cc.Y = margin + (selected_element * CONSOLE_HEIGTH / num_of_elements);
+//	cc.X = margin*2;
+//	SetConsoleTextAttribute(h, ATTR2);
+//	SetConsoleCursorPosition(h, cc);
+//	printf("%s%s","> ",menu_elements[selected_element]);
 };
 
 
@@ -150,13 +157,13 @@ void Menu::mainMenuUpdate(int prev)
 	SetConsoleCursorPosition(h, cc);
 	printf("%s", "               ");
 	SetConsoleCursorPosition(h, cc);
-	printf("%s", element_names[prev]);
+	printf("%s", menu_elements[prev]);
 	
 	cc.Y = margin + (selected_element * CONSOLE_HEIGTH / num_of_elements);
 	cc.X = margin*2;
 	SetConsoleTextAttribute(h, ATTR2);
 	SetConsoleCursorPosition(h, cc);
-	printf("%s%s","> ",element_names[selected_element]);
+	printf("%c %s",16,menu_elements[selected_element]);
 }
 
 void Menu::mainMenuResponse(int Key)
@@ -166,7 +173,7 @@ void Menu::mainMenuResponse(int Key)
 		case KEY_ESCAPE: {Exit(); break;}
 		case KEY_ENTER: 
 		{
-			(this->*this->element_functions[selected_element])();
+			(this->*this->menu_functions[selected_element])();
 			break;
 		}
 				
@@ -194,27 +201,43 @@ void Menu::mainMenuResponse(int Key)
 
 void Menu::settingsDraw()
 {
+	int margin = CONSOLE_HEIGTH / (2*num_of_settings_elements);
+	
+//	char *outp[num_of_settings_elements][CONSOLE_WIDTH-2*margin];
+//	strcat(outp[0])
 	
 	system("cls");
-	SetConsoleTextAttribute(h, ATTR1);
+	
 	COORD cc;
-	int margin = CONSOLE_HEIGTH / (2*num_of_settings_elements);
 	for (int i = 0; i < num_of_settings_elements; i++) 
 	{
-		if (i == selected_element) continue;
+		if (i == selected_element) SetConsoleTextAttribute(h, ATTR2);
+		else SetConsoleTextAttribute(h, ATTR1);
 		cc.Y = margin + (i * CONSOLE_HEIGTH / num_of_settings_elements);
 		cc.X = margin * 2;
 		SetConsoleCursorPosition(h, cc);
-		printf("%s", setting_elements[i]);
-		
-	}
 
-	cc.Y = margin + (selected_element * CONSOLE_HEIGTH / num_of_settings_elements);
-	cc.X = margin*2;
-	SetConsoleTextAttribute(h, ATTR2);
-	SetConsoleCursorPosition(h, cc);
-	printf("%s",setting_elements[selected_element]);
+		char str[CONSOLE_WIDTH - 2*margin];
+		char param[20];
+		switch (i)
+		{
+			case 0: itoa(settings.heigth,param,10); break;
+			case 1: itoa(settings.width,param,10); break;
+			case 2: strcpy(param,pattern_names[settings.pattern]); break;
+			default: param[0] = '\0';
+		}
+		
+		int wid = CONSOLE_WIDTH - 4*margin - strlen(param);
+		if ((i==num_of_settings_elements-1)||(i==num_of_settings_elements-2)) 
+		{
+			if (i==selected_element) sprintf(str,"%c %s",16,setting_elements[i]);
+			else sprintf(str,"%s",setting_elements[i]);
+		}
+		else if (i == selected_element) sprintf(str,"%-*s%c%s%c",wid-2,setting_elements[i],17,param,16);
+		else sprintf(str,"%-*s%s",wid-1,setting_elements[i],param);
+		cout << str;
 	
+	}
 	
 }
 
@@ -225,14 +248,13 @@ void Menu::settingsResponse(int Key)
 		case KEY_ENTER: 
 		{
 			if ((selected_element!=num_of_settings_elements-1)&&(selected_element!=num_of_settings_elements-2))break;
+			if (selected_element==num_of_settings_elements-1) settings = tmp_settings;
 		}
 		case KEY_ESCAPE: 
 		{ 
 			selected_element = 0;
 			mainMenuDraw();
 			response = &Menu::mainMenuResponse;
-			if (selected_element!=num_of_settings_elements-1) break;
-			settings = tmp_settings;
 			break;
 		}
 		
@@ -250,6 +272,29 @@ void Menu::settingsResponse(int Key)
 			settingsDraw();
 			break;
 		}
+		case KEY_ARROW_RIGHT:
+		{
+			switch (selected_element)
+			{
+				case 0: if (settings.heigth<60) settings.heigth+=5;break;
+				case 1: settings.width = 10+(settings.width-10+5)%(CONSOLE_WIDTH-5);break;
+				case 2: settings.pattern=(settings.pattern+1)%num_of_patterns;
+			}
+			settingsDraw();
+			break;
+		}
+		case KEY_ARROW_LEFT:
+		{
+			switch (selected_element)
+			{
+				case 0: if (settings.heigth>10) settings.heigth-=5;break;
+				case 1: settings.width = 10+(settings.width-10-5+(CONSOLE_WIDTH-5))%(CONSOLE_WIDTH-5);break;
+				case 2: settings.pattern=(settings.pattern-1+num_of_patterns)%num_of_patterns;
+			}
+			settingsDraw();
+			break;
+		}	
+		
 	}
 }
 
@@ -299,26 +344,26 @@ void Menu::Exit()
 
 void Menu::gameResponse(int Key)
 {
-	if (*feedback!=gameActive)
+	
+	if ((Key == KEY_ESCAPE)||(*feedback==gameInactive))
+	{
+		pauseMenu();
+		
+		mainMenuDraw();
+		response = &Menu::mainMenuResponse;
+		*feedback = gameInactive;	
+	}
+	
+	if (*feedback==gamePaused)
 	{
 		*feedback = gameActive;
 	}
-	switch (Key)
+	else if (Key == KEY_SPACE)
 	{
-		case KEY_ESCAPE:
-			
-			COORD crd = {CONSOLE_WIDTH-1, CONSOLE_HEIGTH-1};
-			SMALL_RECT src = {0, 0, crd.X, crd.Y};
-			SetConsoleScreenBufferSize (h, crd);
-			SetConsoleWindowInfo (h, TRUE, &src);
-			
-			pauseMenu();
-			SetConsoleTextAttribute(h, ATTR2);
-			system("cls");
-			mainMenuDraw();
-			response = &Menu::mainMenuResponse;
-			*feedback = gameInactive;	
+		*feedback = gamePaused;
 	}
+
+	
 }
 
 Settings_struct& Menu::getSettings()
@@ -339,11 +384,12 @@ HANDLE setup()
 	SetConsoleCursorInfo( h, &structCursorInfo );
 	
 	SetConsoleTextAttribute(h, ATTR2);
-	
+	/*
 	COORD crd = {CONSOLE_WIDTH-1, CONSOLE_HEIGTH-1};
 	SMALL_RECT src = {0, 0, crd.X, crd.Y};
 	SetConsoleScreenBufferSize (h, crd);
 	SetConsoleWindowInfo (h, TRUE, &src);
+	*/
 	return h;
 }
 
@@ -373,12 +419,12 @@ int main()
 			case gameStart:
 				
 				crd = {CONSOLE_WIDTH-1, menu.getSettings().heigth};
-				src = {0, 0, crd.X, crd.Y};
+				src = {0, 0, crd.X, crd.Y+1};
 				SetConsoleScreenBufferSize (h, crd);
 				SetConsoleWindowInfo (h, TRUE, &src);
 				
-				field.consolePrint();
-				flag = gameInactive;
+				field.consoleInitialize();
+				flag = gamePaused;
 				break;
 			case gameActive:
 				if (field.refresh()) field.consolePrint();

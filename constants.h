@@ -7,6 +7,8 @@
 #define KEY_ARROW_LEFT 75
 #define KEY_ENTER 13
 #define KEY_ESCAPE 27
+#define KEY_SPACE 32
+
 #define ATTR1 0x1A
 #define ATTR2 0x1E
 #define ATTR3 0x16
@@ -17,18 +19,18 @@
 
 enum gameStatus
 {
-	gameActive, gameInactive, gameUpdate, gameStart
+	gameActive, gameInactive, gameUpdate, gameStart, gamePaused
 };
 
 enum initialPattern
 {
-	Rpentomino=0, Acorn=1, GameofLife=2, Random=3, Custom=4
+	Rpentomino=0, Acorn=1, GameofLife=2, Glidergun=3, Random=4, Custom=5
 };
 
 struct Settings_struct
 {
 	int heigth, width;
-	initialPattern pattern;
+	int pattern;
 };
 
 #endif

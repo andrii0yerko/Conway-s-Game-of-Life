@@ -15,20 +15,22 @@ class Field
 		int width;
 		int **turn, **buffer;
 		int **status, **nextstatus;
-		int** createEmptyArray();
-		void arrcpy(int**,int**);
+		int **consoleBuffer;
+		
 		int checkNeighbors(int, int);
 		void neighborsstat(int i, int j, int**);
+		
+		int** createEmptyArray();
+		void arrcpy(int**,int**);
 		void del(int**);
 		
 	public:
 		Field& setSettings(Settings_struct);
 		Field(HANDLE, Settings_struct);
 		~Field();
+		void consoleInitialize();
 		void consolePrint();
 		bool refresh();
-		void initialize();
-		
 };
 
 void Field::arrcpy(int** a,int** b)
@@ -46,10 +48,10 @@ Field::Field(HANDLE hndl, Settings_struct set)
 
 Field& Field::setSettings(Settings_struct set)
 {
-	heigth = set.heigth;
-	width = set.width;
-	corner.X = (CONSOLE_WIDTH - width)/2;
-	corner.Y = 1;
+	heigth     = set.heigth;
+	width      = set.width;
+	corner.X   = (CONSOLE_WIDTH - width)/2;
+	corner.Y   = 1;
 	
 	turnNumber = 0;
 	
@@ -76,6 +78,21 @@ Field& Field::setSettings(Settings_struct set)
 		int j = (heigth - 3)/2;
 		turn[i+1][j] = turn[i+3][j+1] = turn[i][j+2] = turn[i+1][j+2] = turn[i+4][j+2] = turn[i+5][j+2] = turn[i+6][j+2] = 1;
 	}
+	else if (set.pattern == Glidergun)
+	{
+		int i = (width - 36)/2;
+		int j = (heigth - 9)/2;
+		turn[i+24][j]=turn[i+22][j+1]=turn[i+24][j+1]
+		=turn[i+12][j+2]=turn[i+13][j+2]=turn[i+20][j+2]=turn[i+21][j+2]=turn[i+34][j+2]=turn[i+35][j+2]
+		=turn[i+11][j+3]=turn[i+15][j+3]=turn[i+20][j+3]=turn[i+21][j+3]=turn[i+34][j+3]=turn[i+35][j+3]
+		=turn[i][j+4]=turn[i+1][j+4]=turn[i+10][j+4]=turn[i+16][j+4]=turn[i+20][j+4]=turn[i+21][j+4]
+		=turn[i][j+5]=turn[i+1][j+5]=turn[i+10][j+5]=turn[i+14][j+5]=turn[i+16][j+5]=turn[i+17][j+5]=turn[i+22][j+5]=turn[i+24][j+5]
+		=turn[i+10][j+6]=turn[i+16][j+6]=turn[i+24][j+6]
+		=turn[i+11][j+7]=turn[i+15][j+7]
+		=turn[i+12][j+8]=turn[i+13][j+8]
+		=1;
+		
+	}
 	
 	for (int i=0; i < this->width; i++)
 	{
@@ -90,6 +107,7 @@ Field& Field::setSettings(Settings_struct set)
 	
 	buffer     = createEmptyArray();
 	arrcpy(buffer,turn);
+	consoleBuffer     = createEmptyArray();
 	
 	return *this;
 }
@@ -161,43 +179,6 @@ bool Field::refresh()
 }
 
 
-void Field::initialize()
-{
-	/*
-	turn[8][7]=1;
-	turn[7][7]=1;
-	turn[6][7]=1;
-	turn[6][8]=1;
-	turn[7][6]=1;
-	
-	turn[8][12]=1;
-	turn[7][12]=1;
-	turn[6][12]=1;
-	turn[6][13]=1;
-	turn[7][11]=1;
-	*/
-	
-	turn[6][11]=1;
-	turn[6][12]=1;
-	turn[6][15]=1;
-	turn[6][16]=1;
-	turn[6][17]=1;
-	turn[7][14]=1;
-	turn[8][12]=1;
-	
-	
-	for (int i=0; i < this->width; i++)
-	{
-		for (int j=0; j < this->heigth; j++)
-		{
-			if (turn[i][j])
-			{
-				neighborsstat(i,j,status);
-			}
-		}
-	}
-	
-}
 
 void Field::neighborsstat(int i, int j, int** st)
 {	
@@ -212,7 +193,7 @@ void Field::neighborsstat(int i, int j, int** st)
 }
 
 
-void Field::consolePrint()
+void Field::consoleInitialize()
 {
 	COORD cc = corner;
 	cc.Y--;
@@ -232,3 +213,28 @@ void Field::consolePrint()
 		cc.Y++;
 	}
 }
+
+void Field::consolePrint()
+{
+	COORD cc = corner;
+	cc.Y--;
+	SetConsoleTextAttribute(h, ATTR4);
+	SetConsoleCursorPosition(h,cc);
+	cout << "Turn:" << turnNumber;
+	cc = corner;
+	SetConsoleTextAttribute(h, ATTR1);
+	for (int i=0; i < this->heigth; i++)
+	{
+		for (int j=0; j < this->width; j++)
+		{
+			if (turn[j][i] != consoleBuffer[j][i])
+			{
+				SetConsoleCursorPosition(h,{cc.X+j,cc.Y+i});
+				if (turn[j][i]) cout << "X";
+				else cout << " ";
+				consoleBuffer[j][i] = turn[j][i];
+			}
+		}
+	}
+}
+
