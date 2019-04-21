@@ -9,9 +9,8 @@ class Field
 {
 	private:
 		HANDLE h;
-		COORD corner;
 		int turnNumber = 0;
-		int heigth;
+		int height;
 		int width;
 		int **turn, **buffer;
 		int **status, **nextstatus;
@@ -36,7 +35,7 @@ class Field
 void Field::arrcpy(int** a,int** b)
 {
 	for (int i=0; i < this->width; i++)
-		for (int j=0; j < this->heigth; j++)
+		for (int j=0; j < this->height; j++)
 		a[i][j] = b[i][j];
 }
 
@@ -48,10 +47,8 @@ Field::Field(HANDLE hndl, Settings_struct set)
 
 Field& Field::setSettings(Settings_struct set)
 {
-	heigth     = set.heigth;
+	height     = set.height;
 	width      = set.width;
-	corner.X   = (CONSOLE_WIDTH - width)/2;
-	corner.Y   = 1;
 	
 	turnNumber = 0;
 	
@@ -63,25 +60,25 @@ Field& Field::setSettings(Settings_struct set)
 	if (set.pattern==Random)
 	{
 		for (int i=0; i < this->width; i++)
-			for (int j=0; j < this->heigth; j++)
+			for (int j=0; j < this->height; j++)
 			turn[i][j] = rand() % 2;
 	}
 	else if (set.pattern == Rpentomino)		
 	{
 		int i = (width - 3)/2;
-		int j = (heigth - 3)/2;
+		int j = (height - 3)/2;
 		turn[i+1][j] = turn[i+2][j] = turn[i][j+1] = turn [i+1][j+1] = turn[i+1][j+2] = 1;
 	}
 	else if (set.pattern == Acorn)		
 	{
 		int i = (width - 7)/2;
-		int j = (heigth - 3)/2;
+		int j = (height - 3)/2;
 		turn[i+1][j] = turn[i+3][j+1] = turn[i][j+2] = turn[i+1][j+2] = turn[i+4][j+2] = turn[i+5][j+2] = turn[i+6][j+2] = 1;
 	}
 	else if (set.pattern == Glidergun)
 	{
 		int i = (width - 36)/2;
-		int j = (heigth - 9)/2;
+		int j = (height - 9)/2;
 		turn[i+24][j]=turn[i+22][j+1]=turn[i+24][j+1]
 		=turn[i+12][j+2]=turn[i+13][j+2]=turn[i+20][j+2]=turn[i+21][j+2]=turn[i+34][j+2]=turn[i+35][j+2]
 		=turn[i+11][j+3]=turn[i+15][j+3]=turn[i+20][j+3]=turn[i+21][j+3]=turn[i+34][j+3]=turn[i+35][j+3]
@@ -96,7 +93,7 @@ Field& Field::setSettings(Settings_struct set)
 	
 	for (int i=0; i < this->width; i++)
 	{
-		for (int j=0; j < this->heigth; j++)
+		for (int j=0; j < this->height; j++)
 		{
 			if (turn[i][j])
 			{
@@ -108,7 +105,7 @@ Field& Field::setSettings(Settings_struct set)
 	buffer     = createEmptyArray();
 	arrcpy(buffer,turn);
 	consoleBuffer     = createEmptyArray();
-	
+	arrcpy(consoleBuffer,turn);
 	return *this;
 }
 
@@ -125,8 +122,8 @@ int** Field::createEmptyArray()
 	int** arr = new int*[this->width];
 	for (int i=0; i < this->width; i++)
 	{
-		arr[i] = new int[this->heigth];
-		for (int j=0; j < this->heigth; j++)
+		arr[i] = new int[this->height];
+		for (int j=0; j < this->height; j++)
 		{
 			arr[i][j] = 0;
 		}
@@ -149,7 +146,7 @@ bool Field::refresh()
 	nextstatus = createEmptyArray();
 	for (int i=0; i < this->width; i++)
 	{
-		for (int j=0; j < this->heigth; j++)
+		for (int j=0; j < this->height; j++)
 		{
 			if ((status[i][j]==3)||(status[i][j]==2 && turn[i][j]))
 			{
@@ -166,7 +163,7 @@ bool Field::refresh()
 	if (turnNumber % 10)
 	{
 		for (int i=0; i < this->width; i++) 
-			for (int j=0; j < this->heigth; j++)
+			for (int j=0; j < this->height; j++)
 				if (buffer[i][j]!=turn[i][j])
 				{
 					arrcpy(buffer,turn);
@@ -186,7 +183,7 @@ void Field::neighborsstat(int i, int j, int** st)
 	{
 		for (int m=-1; m<=1; m++)
 		{
-			st[(i-n+this->width)%this->width][(j-m+this->heigth)%this->heigth]++;
+			st[(i-n+this->width)%this->width][(j-m+this->height)%this->height]++;
 		}
 	}
 	st[i][j]--;
@@ -195,6 +192,10 @@ void Field::neighborsstat(int i, int j, int** st)
 
 void Field::consoleInitialize()
 {
+	SetConsoleTextAttribute(h, ATTR4);
+	system("cls");
+	
+	COORD corner={(CONSOLE_WIDTH - width)/2, (CONSOLE_HEIGHT - height)/2};
 	COORD cc = corner;
 	cc.Y--;
 	SetConsoleTextAttribute(h, ATTR4);
@@ -202,7 +203,7 @@ void Field::consoleInitialize()
 	cout << "Turn:" << turnNumber;
 	cc = corner;
 	SetConsoleTextAttribute(h, ATTR1);
-	for (int i=0; i < this->heigth; i++)
+	for (int i=0; i < this->height; i++)
 	{
 		SetConsoleCursorPosition(h,cc);
 		for (int j=0; j < this->width; j++)
@@ -216,6 +217,7 @@ void Field::consoleInitialize()
 
 void Field::consolePrint()
 {
+	COORD corner={(CONSOLE_WIDTH - width)/2, (CONSOLE_HEIGHT - height)/2};
 	COORD cc = corner;
 	cc.Y--;
 	SetConsoleTextAttribute(h, ATTR4);
@@ -223,7 +225,7 @@ void Field::consolePrint()
 	cout << "Turn:" << turnNumber;
 	cc = corner;
 	SetConsoleTextAttribute(h, ATTR1);
-	for (int i=0; i < this->heigth; i++)
+	for (int i=0; i < this->height; i++)
 	{
 		for (int j=0; j < this->width; j++)
 		{

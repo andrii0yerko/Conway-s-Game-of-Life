@@ -14,8 +14,10 @@
 #define ATTR3 0x16
 #define ATTR4 0x0A
 
-#define CONSOLE_WIDTH 80
-#define CONSOLE_HEIGTH 31
+#define SCREEN_UPDATE -1
+
+int CONSOLE_WIDTH = 80;
+int CONSOLE_HEIGHT = 31;
 
 enum gameStatus
 {
@@ -29,7 +31,7 @@ enum initialPattern
 
 struct Settings_struct
 {
-	int heigth, width;
+	int height, width;
 	int pattern;
 };
 

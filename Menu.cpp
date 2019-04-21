@@ -35,7 +35,9 @@ char logo[17][28] = {
 
 //////TO DO LIST
 //gameResponse
-//render
+// custom initial pattern
+// settings file
+// timer
 //Help                                         
 //About
 
@@ -109,19 +111,20 @@ void Menu::pauseMenu()
 
 void Menu::mainMenuDraw() 
 {
+	/*
 	COORD crd = {CONSOLE_WIDTH-1, CONSOLE_HEIGTH-1};
 	SMALL_RECT src = {0, 0, crd.X, crd.Y};
 	SetConsoleScreenBufferSize (h, crd);
 	SetConsoleWindowInfo (h, TRUE, &src);	
-	
+	*/
 	system("cls");
 	SetConsoleTextAttribute(h, ATTR1);
 	COORD cc;
-	int margin = CONSOLE_HEIGTH / (2*num_of_elements);
+	int margin = CONSOLE_HEIGHT / (2*num_of_elements);
 	for (int i = 0; i < num_of_elements; i++) 
 	{
 		if (i == selected_element) continue;
-		cc.Y = margin + (i * CONSOLE_HEIGTH / num_of_elements);
+		cc.Y = margin + (i * CONSOLE_HEIGHT / num_of_elements);
 		cc.X = margin*2;
 		SetConsoleCursorPosition(h, cc);
 		printf("%s", menu_elements[i]);
@@ -131,16 +134,11 @@ void Menu::mainMenuDraw()
 	for (int i = 0; i < 17; i++)
 	{
 		cc.X = margin*2+10 + (CONSOLE_WIDTH -(margin*2+10)-27)/2;
-		cc.Y = (CONSOLE_HEIGTH-17)/2+i;
+		cc.Y = (CONSOLE_HEIGHT-17)/2+i;
 		SetConsoleCursorPosition(h, cc);
 		printf("%s", logo[i]);
 	}
 	mainMenuUpdate(0);
-//	cc.Y = margin + (selected_element * CONSOLE_HEIGTH / num_of_elements);
-//	cc.X = margin*2;
-//	SetConsoleTextAttribute(h, ATTR2);
-//	SetConsoleCursorPosition(h, cc);
-//	printf("%s%s","> ",menu_elements[selected_element]);
 };
 
 
@@ -149,9 +147,9 @@ void Menu::mainMenuUpdate(int prev)
 	SetConsoleTextAttribute(h, ATTR1);
 	COORD cc;
 	prev = (num_of_elements+selected_element+prev) % (num_of_elements);
-	int margin = CONSOLE_HEIGTH / (2*num_of_elements);
+	int margin = CONSOLE_HEIGHT / (2*num_of_elements);
 	
-	cc.Y = margin + (prev * CONSOLE_HEIGTH / num_of_elements);
+	cc.Y = margin + (prev * CONSOLE_HEIGHT / num_of_elements);
 	cc.X = margin*2;
 	SetConsoleTextAttribute(h, ATTR1);
 	SetConsoleCursorPosition(h, cc);
@@ -159,7 +157,7 @@ void Menu::mainMenuUpdate(int prev)
 	SetConsoleCursorPosition(h, cc);
 	printf("%s", menu_elements[prev]);
 	
-	cc.Y = margin + (selected_element * CONSOLE_HEIGTH / num_of_elements);
+	cc.Y = margin + (selected_element * CONSOLE_HEIGHT / num_of_elements);
 	cc.X = margin*2;
 	SetConsoleTextAttribute(h, ATTR2);
 	SetConsoleCursorPosition(h, cc);
@@ -194,6 +192,11 @@ void Menu::mainMenuResponse(int Key)
 			mainMenuUpdate(1);
 			break;
 		}
+		case SCREEN_UPDATE:
+		{
+			mainMenuDraw();
+			break;
+		}
 	}	
 }
 
@@ -201,7 +204,7 @@ void Menu::mainMenuResponse(int Key)
 
 void Menu::settingsDraw()
 {
-	int margin = CONSOLE_HEIGTH / (2*num_of_settings_elements);
+	int margin = CONSOLE_HEIGHT / (2*num_of_settings_elements);
 	
 //	char *outp[num_of_settings_elements][CONSOLE_WIDTH-2*margin];
 //	strcat(outp[0])
@@ -213,7 +216,7 @@ void Menu::settingsDraw()
 	{
 		if (i == selected_element) SetConsoleTextAttribute(h, ATTR2);
 		else SetConsoleTextAttribute(h, ATTR1);
-		cc.Y = margin + (i * CONSOLE_HEIGTH / num_of_settings_elements);
+		cc.Y = margin + (i * CONSOLE_HEIGHT / num_of_settings_elements);
 		cc.X = margin * 2;
 		SetConsoleCursorPosition(h, cc);
 
@@ -221,7 +224,7 @@ void Menu::settingsDraw()
 		char param[20];
 		switch (i)
 		{
-			case 0: itoa(settings.heigth,param,10); break;
+			case 0: itoa(settings.height,param,10); break;
 			case 1: itoa(settings.width,param,10); break;
 			case 2: strcpy(param,pattern_names[settings.pattern]); break;
 			default: param[0] = '\0';
@@ -276,7 +279,7 @@ void Menu::settingsResponse(int Key)
 		{
 			switch (selected_element)
 			{
-				case 0: if (settings.heigth<60) settings.heigth+=5;break;
+				case 0: if (settings.height<60) settings.height+=5;break;
 				case 1: settings.width = 10+(settings.width-10+5)%(CONSOLE_WIDTH-5);break;
 				case 2: settings.pattern=(settings.pattern+1)%num_of_patterns;
 			}
@@ -287,14 +290,18 @@ void Menu::settingsResponse(int Key)
 		{
 			switch (selected_element)
 			{
-				case 0: if (settings.heigth>10) settings.heigth-=5;break;
+				case 0: if (settings.height>10) settings.height-=5;break;
 				case 1: settings.width = 10+(settings.width-10-5+(CONSOLE_WIDTH-5))%(CONSOLE_WIDTH-5);break;
 				case 2: settings.pattern=(settings.pattern-1+num_of_patterns)%num_of_patterns;
 			}
 			settingsDraw();
 			break;
 		}	
-		
+		case SCREEN_UPDATE:
+		{
+			settingsDraw();
+			break;
+		}
 	}
 }
 
@@ -309,8 +316,6 @@ void Menu::Restart()
 
 void Menu::Game() 
 {
-	SetConsoleTextAttribute(h, ATTR4);
-	system("cls");
 	response = &Menu::gameResponse;
 	*feedback = gameStart;
 };
@@ -344,7 +349,11 @@ void Menu::Exit()
 
 void Menu::gameResponse(int Key)
 {
-	
+	if (Key == SCREEN_UPDATE)
+	{
+		*feedback = gameStart;	
+		return;
+	}
 	if ((Key == KEY_ESCAPE)||(*feedback==gameInactive))
 	{
 		pauseMenu();
@@ -398,6 +407,9 @@ int main()
 {
 	SMALL_RECT src;
 	COORD crd;
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+    int columns, rows;
+	
 	int flag = gameInactive;
 	HANDLE h = setup();
 	Menu menu(h, &flag);
@@ -406,6 +418,15 @@ int main()
 	menu.mainMenuDraw();
 	while (1)
 	{
+		
+		
+    	GetConsoleScreenBufferInfo(h, &csbi);
+    	columns=CONSOLE_WIDTH;
+    	rows=CONSOLE_HEIGHT;
+    	CONSOLE_WIDTH = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+    	CONSOLE_HEIGHT = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+    	if ((columns!=CONSOLE_WIDTH)||(rows!=CONSOLE_HEIGHT)) (menu.*menu.response)(SCREEN_UPDATE);
+		
 		if (_kbhit())
 		{
 			(menu.*menu.response)(_getch());
@@ -417,12 +438,13 @@ int main()
 			case gameUpdate:
 				field.setSettings(menu.getSettings());
 			case gameStart:
-				
-				crd = {CONSOLE_WIDTH-1, menu.getSettings().heigth};
-				src = {0, 0, crd.X, crd.Y+1};
+				if  (menu.getSettings().height < CONSOLE_HEIGHT) crd.Y = CONSOLE_HEIGHT-1;
+				else crd.Y = menu.getSettings().height;
+				crd.X = CONSOLE_WIDTH-1;
+				src = {0, 0, crd.X, crd.Y};
 				SetConsoleScreenBufferSize (h, crd);
 				SetConsoleWindowInfo (h, TRUE, &src);
-				
+				system("cls");
 				field.consoleInitialize();
 				flag = gamePaused;
 				break;
