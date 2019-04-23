@@ -34,7 +34,6 @@ char logo[17][28] = {
 #define num_of_patterns 6
 
 //////TO DO LIST
-//gameResponse
 // custom initial pattern
 // settings file
 // timer
@@ -107,8 +106,6 @@ void Menu::pauseMenu()
 	menu_functions = pause_menu_functions;
 }
 
-
-
 void Menu::mainMenuDraw() 
 {
 	/*
@@ -140,7 +137,6 @@ void Menu::mainMenuDraw()
 	}
 	mainMenuUpdate(0);
 };
-
 
 void Menu::mainMenuUpdate(int prev)
 {
@@ -201,6 +197,12 @@ void Menu::mainMenuResponse(int Key)
 }
 
 
+void Menu::Settings() 
+{
+	tmp_settings = settings;
+	settingsDraw();
+	response = &Menu::settingsResponse;
+};
 
 void Menu::settingsDraw()
 {
@@ -319,33 +321,6 @@ void Menu::Game()
 	response = &Menu::gameResponse;
 	*feedback = gameStart;
 };
-void Menu::Help() 
-{
-	system("cls");
-	printf("Help");
-	system("pause");
-	mainMenuDraw();
-};
-void Menu::About() 
-{
-	system("cls");
-	printf("About");
-	system("pause");
-	mainMenuDraw();
-};
-
-void Menu::Settings() 
-{
-	tmp_settings = settings;
-	settingsDraw();
-	response = &Menu::settingsResponse;
-};
-
-void Menu::Exit()
-{
-	exit(0);
-}
-
 
 void Menu::gameResponse(int Key)
 {
@@ -372,7 +347,48 @@ void Menu::gameResponse(int Key)
 		*feedback = gamePaused;
 	}
 
+}
+
+
+void Menu::Help() 
+{
+	system("cls");
+	printf("Help");
+	system("pause");
+	mainMenuDraw();
+};
+void Menu::About() 
+{
+	static char*about[4]=
+	{
+		"Conway's game of life",
+		"Made by IASA student",
+		"Andrii Yerko",
+		"2019"
+	};
+	system("cls");
 	
+	COORD cc;
+	cc.Y = (CONSOLE_HEIGHT - 4)/2;
+	
+	SetConsoleTextAttribute(h, ATTR2);
+	for(int i=0; i<4; i++)
+	{
+		cc.X = (CONSOLE_WIDTH - strlen(about[i]))/2;
+		SetConsoleCursorPosition(h, cc);
+		cout << about[i];
+		cc.Y++;
+	}
+	
+	getch();
+	mainMenuDraw();
+};
+
+
+
+void Menu::Exit()
+{
+	exit(0);
 }
 
 Settings_struct& Menu::getSettings()
