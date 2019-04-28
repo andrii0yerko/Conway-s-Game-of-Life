@@ -16,12 +16,16 @@
 
 #define SCREEN_UPDATE -1
 
+int MIN_CONSOLE_WIDTH = 60;
+int MIN_CONSOLE_HEIGHT = 25;
+
+
 int CONSOLE_WIDTH = 80;
 int CONSOLE_HEIGHT = 31;
 
 enum gameStatus
 {
-	gameActive, gameInactive, gameUpdate, gameStart, gamePaused
+	gameActive, gameInactive, gameUpdate, gameStart, gamePaused, gameSkip
 };
 
 enum initialPattern

@@ -35,8 +35,6 @@ char logo[17][28] = {
 
 //////TO DO LIST
 // custom initial pattern
-// settings file
-// timer
 //Help                                         
 //About
 
@@ -48,16 +46,22 @@ class Menu
 		
 		void Restart();
 		void Game();
-		void Settings();
+		void gameResponse(int);
+		
 		void Help();
+		void helpDraw();
+		void helpResponse(int);
+		
 		void About();
 		void Exit();
 		void mainMenuDraw();
 		void mainMenuUpdate(int prev);
 		void mainMenuResponse(int);
-		void gameResponse(int);
+		
+		void Settings();
 		void settingsResponse(int);
 		void settingsDraw();
+		
 		void pauseMenu();
 		Settings_struct& getSettings();
 		
@@ -114,6 +118,7 @@ void Menu::mainMenuDraw()
 	SetConsoleScreenBufferSize (h, crd);
 	SetConsoleWindowInfo (h, TRUE, &src);	
 	*/
+	
 	system("cls");
 	SetConsoleTextAttribute(h, ATTR1);
 	COORD cc;
@@ -199,6 +204,15 @@ void Menu::mainMenuResponse(int Key)
 
 void Menu::Settings() 
 {
+	FILE* f;
+	if(f=fopen("settingsfile","r"))
+	{
+		fscanf(f,"%d%d%d",&settings.height,&settings.width,&settings.pattern);
+	}
+	
+	if ( settings.height > (CONSOLE_HEIGHT/5 -1)*5) settings.height -= settings.height - (CONSOLE_HEIGHT/5 -1)*5;
+	if ( settings.width > (CONSOLE_WIDTH/5-1)*5) settings.width  -= settings.width - (CONSOLE_WIDTH/5-1)*5;
+	
 	tmp_settings = settings;
 	settingsDraw();
 	response = &Menu::settingsResponse;
@@ -208,11 +222,7 @@ void Menu::settingsDraw()
 {
 	int margin = CONSOLE_HEIGHT / (2*num_of_settings_elements);
 	
-//	char *outp[num_of_settings_elements][CONSOLE_WIDTH-2*margin];
-//	strcat(outp[0])
-	
 	system("cls");
-	
 	COORD cc;
 	for (int i = 0; i < num_of_settings_elements; i++) 
 	{
@@ -254,6 +264,14 @@ void Menu::settingsResponse(int Key)
 		{
 			if ((selected_element!=num_of_settings_elements-1)&&(selected_element!=num_of_settings_elements-2))break;
 			if (selected_element==num_of_settings_elements-1) settings = tmp_settings;
+			if (selected_element==num_of_settings_elements-2)
+			{
+				FILE* f;
+				if(f=fopen("settingsfile","w"))
+				{
+					fprintf(f,"%d %d %d",settings.height,settings.width,settings.pattern);
+				}
+			}
 		}
 		case KEY_ESCAPE: 
 		{ 
@@ -281,8 +299,8 @@ void Menu::settingsResponse(int Key)
 		{
 			switch (selected_element)
 			{
-				case 0: if (settings.height<60) settings.height+=5;break;
-				case 1: settings.width = 10+(settings.width-10+5)%(CONSOLE_WIDTH-5);break;
+				case 0: settings.height = 10+(settings.height-10+5)%((CONSOLE_HEIGHT/5 -1)*5);break;
+				case 1: settings.width = 10+(settings.width-10+5)%((CONSOLE_WIDTH/5-1)*5);break;
 				case 2: settings.pattern=(settings.pattern+1)%num_of_patterns;
 			}
 			settingsDraw();
@@ -292,8 +310,8 @@ void Menu::settingsResponse(int Key)
 		{
 			switch (selected_element)
 			{
-				case 0: if (settings.height>10) settings.height-=5;break;
-				case 1: settings.width = 10+(settings.width-10-5+(CONSOLE_WIDTH-5))%(CONSOLE_WIDTH-5);break;
+				case 0: settings.height = 10+(settings.height-10-5+(CONSOLE_HEIGHT/5 -1)*5)%( (CONSOLE_HEIGHT/5 -1)*5);break;
+				case 1: settings.width = 10+(settings.width-10-5+(CONSOLE_WIDTH/5-1)*5)%( (CONSOLE_WIDTH/5-1)*5);break;
 				case 2: settings.pattern=(settings.pattern-1+num_of_patterns)%num_of_patterns;
 			}
 			settingsDraw();
@@ -301,6 +319,8 @@ void Menu::settingsResponse(int Key)
 		}	
 		case SCREEN_UPDATE:
 		{
+			if ( settings.height > (CONSOLE_HEIGHT/5 -1)*5) settings.height -= settings.height - (CONSOLE_HEIGHT/5 -1)*5;
+			if ( settings.width > (CONSOLE_WIDTH/5-1)*5) settings.width  -= settings.width - (CONSOLE_WIDTH/5-1)*5;
 			settingsDraw();
 			break;
 		}
@@ -329,10 +349,11 @@ void Menu::gameResponse(int Key)
 		*feedback = gameStart;	
 		return;
 	}
-	if ((Key == KEY_ESCAPE)||(*feedback==gameInactive))
+	if ((Key==224)||(Key==0)) return;
+	
+	if ((Key == KEY_ESCAPE)||((*feedback==gameInactive)&&(Key!=KEY_ARROW_RIGHT)))
 	{
 		pauseMenu();
-		
 		mainMenuDraw();
 		response = &Menu::mainMenuResponse;
 		*feedback = gameInactive;	
@@ -347,16 +368,121 @@ void Menu::gameResponse(int Key)
 		*feedback = gamePaused;
 	}
 
+	if ((Key==KEY_ARROW_RIGHT)&&(*feedback!=gameInactive))
+	{
+		*feedback = gameSkip;
+	}
 }
 
 
 void Menu::Help() 
 {
+	selected_element = 0;
 	system("cls");
-	printf("Help");
-	system("pause");
-	mainMenuDraw();
+	helpDraw();
+	response = &Menu::helpResponse;
 };
+
+void Menu::helpDraw()
+{
+	
+	char*rules[]=
+	{
+		"The Game of Life is a cellular automaton devised by the British mathematician John Horton Conway in 1970.",
+		"",
+		"The game is a zero-player game, meaning that its evolution is determined by its initial state,",
+		"requiring no further input. One interacts with the Game of Life by creating an initial configuration",
+		"and observing how it evolves, or, for advanced players, by creating patterns with particular properties.",
+		"",
+		"The universe of the Game of Life is a two-dimensional orthogonal grid of square cells, each of which is in one of two possible states, alive or dead.",
+		"Every cell interacts with its eight neighbours, which are the cells that are horizontally, vertically, or diagonally adjacent.", 
+		"",
+		"At each step in time, the following transitions occur:",
+		"1.Any live cell with fewer than two live neighbours dies, as if by underpopulation.",
+		"2.Any live cell with two or three live neighbours lives on to the next generation.",
+		"3.Any live cell with more than three live neighbours dies, as if by overpopulation.",
+		"4.Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction."
+	};
+	
+	char*controls[]=
+	{
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		""
+	};
+	
+	
+	int m = CONSOLE_HEIGHT / (2*num_of_elements);
+	
+	for(int i = 0; i<2; i++)
+	{
+		if (selected_element==i) SetConsoleTextAttribute(h, ATTR2);
+		else SetConsoleTextAttribute(h,ATTR1);
+		if(i==0)
+		{
+			SetConsoleCursorPosition(h,{CONSOLE_WIDTH/4-strlen("Game rules")/2,m});
+			cout << "Game rules";
+		}
+		else
+		{
+			SetConsoleCursorPosition(h,{3*CONSOLE_WIDTH/4-strlen("Controls")/2,m});
+			cout << "Controls";
+		}
+	}
+	
+	COORD cc = {0,m+2};
+	SetConsoleTextAttribute(h,ATTR1);
+	SetConsoleCursorPosition(h,cc);
+	for(int i = 0; i<CONSOLE_WIDTH; i++)
+	{
+		printf ("%c",461);
+	}
+	
+	cc.Y+=2;
+	cc.X=m;
+	for(int i = 0; i<14; i++)
+	{
+		SetConsoleCursorPosition(h,cc);
+		cout<<rules[i];
+		cc.Y++;
+	}
+	
+	
+	
+}
+
+void Menu::helpResponse(int Key)
+{
+	switch(Key)
+	{
+		case KEY_ESCAPE:
+			selected_element = 0;
+			mainMenuDraw();
+			response = &Menu::mainMenuResponse;
+			break;
+		case KEY_ARROW_UP:
+		case KEY_ARROW_DOWN:
+		case KEY_ARROW_LEFT:
+		case KEY_ARROW_RIGHT:
+			selected_element = (selected_element+1)%2;
+			helpDraw();break;
+		case SCREEN_UPDATE:
+			system("cls");
+			helpDraw();break;
+	}
+}
+
 void Menu::About() 
 {
 	static char*about[4]=
@@ -407,6 +533,11 @@ HANDLE setup()
 	GetConsoleCursorInfo(h,&structCursorInfo);
 	structCursorInfo.bVisible = FALSE;
 	SetConsoleCursorInfo( h, &structCursorInfo );
+
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	SetConsoleScreenBufferSize (h, {GetSystemMetrics(SM_CXMAXIMIZED), GetSystemMetrics(SM_CYMAXIMIZED)});
+	GetConsoleScreenBufferInfo(h, &csbi);
+	SetConsoleScreenBufferSize (h, csbi.dwMaximumWindowSize);
 	
 	SetConsoleTextAttribute(h, ATTR2);
 	/*
@@ -419,29 +550,64 @@ HANDLE setup()
 }
 
 
-int main()
+bool ScreenChanges(HANDLE h)
 {
-	SMALL_RECT src;
-	COORD crd;
+	
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
     int columns, rows;
+		
+
+   	GetConsoleScreenBufferInfo(h, &csbi);
+    columns        = CONSOLE_WIDTH;
+    rows           = CONSOLE_HEIGHT;
+   	CONSOLE_WIDTH  = csbi.srWindow.Right  - csbi.srWindow.Left + 1;
+    CONSOLE_HEIGHT = csbi.srWindow.Bottom - csbi.srWindow.Top  + 1;
+   	
+    if (CONSOLE_WIDTH<MIN_CONSOLE_WIDTH)
+	{
+		CONSOLE_WIDTH = MIN_CONSOLE_WIDTH;
+		SMALL_RECT r = {0,0,CONSOLE_WIDTH-1,CONSOLE_HEIGHT-1};
+		SetConsoleWindowInfo (h, TRUE, &r);
+	} 
+	if (CONSOLE_HEIGHT<MIN_CONSOLE_HEIGHT) 
+	{
+		CONSOLE_HEIGHT = MIN_CONSOLE_HEIGHT;
+		SMALL_RECT r = {0,0,CONSOLE_WIDTH-1,CONSOLE_HEIGHT-1};
+		SetConsoleWindowInfo (h, TRUE, &r);
+	}
+	
+	return ((columns!=CONSOLE_WIDTH)||(rows!=CONSOLE_HEIGHT)) ;
+}
+
+
+int main()
+{
+
+	SMALL_RECT src;
+	COORD crd;
+    int columns, rows;
+    int lasttime;
+	HANDLE h = setup();
+	
+//	CONSOLE_FONT_INFOEX csi;
+//	GetCurrentConsoleFontEx(h,FALSE,&csi)
+//	MIN_CONSOLE_WIDTH csi.dwFontSize.X *53
+//	csi.dwFontSize.Y *25
 	
 	int flag = gameInactive;
-	HANDLE h = setup();
+
 	Menu menu(h, &flag);
 	Field field(h,menu.getSettings());
 
 	menu.mainMenuDraw();
 	while (1)
 	{
+    	
+    	if (ScreenChanges(h)) 
+		{
+			(menu.*menu.response)(SCREEN_UPDATE);
+		}
 		
-		
-    	GetConsoleScreenBufferInfo(h, &csbi);
-    	columns=CONSOLE_WIDTH;
-    	rows=CONSOLE_HEIGHT;
-    	CONSOLE_WIDTH = csbi.srWindow.Right - csbi.srWindow.Left + 1;
-    	CONSOLE_HEIGHT = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
-    	if ((columns!=CONSOLE_WIDTH)||(rows!=CONSOLE_HEIGHT)) (menu.*menu.response)(SCREEN_UPDATE);
 		
 		if (_kbhit())
 		{
@@ -453,22 +619,38 @@ int main()
 		
 			case gameUpdate:
 				field.setSettings(menu.getSettings());
+				
 			case gameStart:
-				if  (menu.getSettings().height < CONSOLE_HEIGHT) crd.Y = CONSOLE_HEIGHT-1;
+				if  (menu.getSettings().height < ((CONSOLE_HEIGHT/5 -1)*5)) crd.Y = ((CONSOLE_HEIGHT/5 -1)*5)-1;
 				else crd.Y = menu.getSettings().height;
-				crd.X = CONSOLE_WIDTH-1;
+				if  (menu.getSettings().width < ((CONSOLE_WIDTH/5 -1)*5)) crd.Y = ((CONSOLE_WIDTH/5 -1)*5)-1;
+				else crd.Y = menu.getSettings().width;
 				src = {0, 0, crd.X, crd.Y};
 				SetConsoleScreenBufferSize (h, crd);
 				SetConsoleWindowInfo (h, TRUE, &src);
 				system("cls");
 				field.consoleInitialize();
 				flag = gamePaused;
+				lasttime = clock();
 				break;
+			
 			case gameActive:
+				if (clock() - lasttime < 50) break;
+				lasttime = clock();
 				if (field.refresh()) field.consolePrint();
 				else flag = gameInactive;
 				break;
-			//system("pause");
+				
+			case gameSkip:
+				for(int i=0;i<3;i++)
+					if (!field.refresh()) 
+					{
+						flag = gameInactive;
+						field.consolePrint();
+						break;
+					}
+				if (flag==gameSkip) flag = gameActive;
+				break;
 		}
 	}
 }

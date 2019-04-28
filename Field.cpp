@@ -4,6 +4,7 @@
 #include "constants.h"
 using namespace std;
 
+class Menu;
 
 class Field
 {
