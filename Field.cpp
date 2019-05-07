@@ -20,6 +20,7 @@ class Field
 		int checkNeighbors(int, int);
 		void neighborsstat(int i, int j, int**);
 		
+		
 		int** createEmptyArray();
 		void arrcpy(int**,int**);
 		void del(int**);
@@ -28,9 +29,13 @@ class Field
 		Field& setSettings(Settings_struct);
 		Field(HANDLE, Settings_struct);
 		~Field();
-		void consoleInitialize();
-		void consolePrint();
+		void consoleInitialize(char*);
+		void consolePrint(char*);
 		bool refresh();
+		Field& setCell(int,int);
+		int getCell(int,int);
+		int getTurn(){return turnNumber;}
+		void initialize();
 };
 
 void Field::arrcpy(int** a,int** b)
@@ -53,8 +58,6 @@ Field& Field::setSettings(Settings_struct set)
 	
 	turnNumber = 0;
 	
-	status     = createEmptyArray();
-	nextstatus = createEmptyArray();
 	turn       = createEmptyArray();
 	
 	
@@ -88,9 +91,23 @@ Field& Field::setSettings(Settings_struct set)
 		=turn[i+10][j+6]=turn[i+16][j+6]=turn[i+24][j+6]
 		=turn[i+11][j+7]=turn[i+15][j+7]
 		=turn[i+12][j+8]=turn[i+13][j+8]
-		=1;
-		
+		=1;	
 	}
+	else if (set.pattern == DieHard)
+	{
+		int i = (width - 8)/2;
+		int j = (height - 3)/2;
+		turn[i+6][j]=turn[i][j+1]=turn[i+1][j+1]=turn[i+1][j+2]=turn[i+5][j+2]=turn[i+6][j+2]=turn[i+7][j+2]=1;
+	}
+	
+	initialize();
+	return *this;
+}
+
+void Field::initialize()
+{
+	status     = createEmptyArray();
+	nextstatus = createEmptyArray();
 	
 	for (int i=0; i < this->width; i++)
 	{
@@ -107,9 +124,7 @@ Field& Field::setSettings(Settings_struct set)
 	arrcpy(buffer,turn);
 	consoleBuffer     = createEmptyArray();
 	arrcpy(consoleBuffer,turn);
-	return *this;
 }
-
 
 Field::~Field()
 {
@@ -191,7 +206,18 @@ void Field::neighborsstat(int i, int j, int** st)
 }
 
 
-void Field::consoleInitialize()
+Field& Field::setCell(int i, int j)
+{
+	turn[i][j] = !turn[i][j];
+	return*this;
+}
+
+int Field::getCell(int i, int j)
+{
+	return turn[i][j];
+}
+
+void Field::consoleInitialize(char* message=NULL)
 {
 	SetConsoleTextAttribute(h, ATTR4);
 	system("cls");
@@ -201,7 +227,8 @@ void Field::consoleInitialize()
 	cc.Y--;
 	SetConsoleTextAttribute(h, ATTR4);
 	SetConsoleCursorPosition(h,cc);
-	cout << "Turn:" << turnNumber;
+	if (message) cout<<message;
+	else cout << "Turn:" << turnNumber;
 	cc = corner;
 	SetConsoleTextAttribute(h, ATTR1);
 	for (int i=0; i < this->height; i++)
@@ -216,14 +243,14 @@ void Field::consoleInitialize()
 	}
 }
 
-void Field::consolePrint()
+void Field::consolePrint(char* message="")
 {
 	COORD corner={(CONSOLE_WIDTH - width)/2, (CONSOLE_HEIGHT - height)/2};
 	COORD cc = corner;
 	cc.Y--;
 	SetConsoleTextAttribute(h, ATTR4);
 	SetConsoleCursorPosition(h,cc);
-	cout << "Turn:" << turnNumber;
+	cout << "Turn:" << turnNumber <<" "<< message <<"                   ";
 	cc = corner;
 	SetConsoleTextAttribute(h, ATTR1);
 	for (int i=0; i < this->height; i++)

@@ -35,8 +35,6 @@ char logo[17][28] = {
 
 //////TO DO LIST
 // custom initial pattern
-//Help                                         
-//About
 
 class Menu
 {
@@ -63,6 +61,7 @@ class Menu
 		void settingsDraw();
 		
 		void pauseMenu();
+		void unpauseMenu();
 		Settings_struct& getSettings();
 		
 		void (Menu::*response)(int) = &Menu::mainMenuResponse;
@@ -80,7 +79,7 @@ class Menu
 		
 		
 		char setting_elements[num_of_settings_elements][16] = {"Heigth", "Width", "Initial Pattern", "Save", "Cancel"};
-		char *pattern_names[num_of_patterns]  = {"R-pentomino", "Acorn", "Game of Life", "Gosper`s glider gun", "Random", "Custom"};
+		char *pattern_names[num_of_patterns]  = {"R-pentomino", "Acorn", "Die Hard", "Gosper`s glider gun", "Random", "Custom"};
 		
 		
 		int num_of_elements = 5;
@@ -98,6 +97,15 @@ Menu::Menu(HANDLE hndl, int *a)
 {
 	h = hndl;
 	feedback = a;
+	
+	FILE* f;
+	if(f=fopen("settingsfile","r"))
+	{
+		fscanf(f,"%d%d%d",&settings.height,&settings.width,&settings.pattern);
+	}
+	
+//	if ( settings.height > (CONSOLE_HEIGHT/5 -1)*5) settings.height -= settings.height - (CONSOLE_HEIGHT/5 -1)*5;
+//	if ( settings.width > (CONSOLE_WIDTH/5-1)*5) settings.width  -= settings.width - (CONSOLE_WIDTH/5-1)*5;
 }
 Menu::~Menu(){}
 
@@ -108,6 +116,13 @@ void Menu::pauseMenu()
 	num_of_elements++;
 	menu_elements = pause_menu;
 	menu_functions = pause_menu_functions;
+}
+
+void Menu::unpauseMenu()
+{
+	num_of_elements = 5;
+	menu_elements = default_menu;
+	menu_functions = default_menu_functions;
 }
 
 void Menu::mainMenuDraw() 
@@ -204,15 +219,6 @@ void Menu::mainMenuResponse(int Key)
 
 void Menu::Settings() 
 {
-	FILE* f;
-	if(f=fopen("settingsfile","r"))
-	{
-		fscanf(f,"%d%d%d",&settings.height,&settings.width,&settings.pattern);
-	}
-	
-	if ( settings.height > (CONSOLE_HEIGHT/5 -1)*5) settings.height -= settings.height - (CONSOLE_HEIGHT/5 -1)*5;
-	if ( settings.width > (CONSOLE_WIDTH/5-1)*5) settings.width  -= settings.width - (CONSOLE_WIDTH/5-1)*5;
-	
 	tmp_settings = settings;
 	settingsDraw();
 	response = &Menu::settingsResponse;
@@ -270,6 +276,7 @@ void Menu::settingsResponse(int Key)
 				if(f=fopen("settingsfile","w"))
 				{
 					fprintf(f,"%d %d %d",settings.height,settings.width,settings.pattern);
+					fclose(f);
 				}
 			}
 		}
@@ -299,9 +306,9 @@ void Menu::settingsResponse(int Key)
 		{
 			switch (selected_element)
 			{
-				case 0: settings.height = 10+(settings.height-10+5)%((CONSOLE_HEIGHT/5 -1)*5);break;
-				case 1: settings.width = 10+(settings.width-10+5)%((CONSOLE_WIDTH/5-1)*5);break;
-				case 2: settings.pattern=(settings.pattern+1)%num_of_patterns;
+				case 0: settings.height  = 10+(settings.height-10+5)%(((CONSOLE_HEIGHT-2)/5 -1)*5);break;
+				case 1: settings.width   = 10+(settings.width-10+5)%((CONSOLE_WIDTH/5-1)*5);break;
+				case 2: settings.pattern = (settings.pattern+1)%num_of_patterns;
 			}
 			settingsDraw();
 			break;
@@ -310,9 +317,9 @@ void Menu::settingsResponse(int Key)
 		{
 			switch (selected_element)
 			{
-				case 0: settings.height = 10+(settings.height-10-5+(CONSOLE_HEIGHT/5 -1)*5)%( (CONSOLE_HEIGHT/5 -1)*5);break;
-				case 1: settings.width = 10+(settings.width-10-5+(CONSOLE_WIDTH/5-1)*5)%( (CONSOLE_WIDTH/5-1)*5);break;
-				case 2: settings.pattern=(settings.pattern-1+num_of_patterns)%num_of_patterns;
+				case 0: settings.height  = 10+(settings.height-10-5+((CONSOLE_HEIGHT-2)/5 -1)*5)%( ((CONSOLE_HEIGHT-2)/5 -1)*5);break;
+				case 1: settings.width   = 10+(settings.width-10-5+(CONSOLE_WIDTH/5-1)*5)%( (CONSOLE_WIDTH/5-1)*5);break;
+				case 2: settings.pattern = (settings.pattern-1+num_of_patterns)%num_of_patterns;
 			}
 			settingsDraw();
 			break;
@@ -330,8 +337,6 @@ void Menu::settingsResponse(int Key)
 
 void Menu::Restart()
 {
-	SetConsoleTextAttribute(h, ATTR4);
-	system("cls");
 	response = &Menu::gameResponse;
 	*feedback = gameUpdate;
 }
@@ -344,31 +349,42 @@ void Menu::Game()
 
 void Menu::gameResponse(int Key)
 {
+	if (toupper(Key) == 'R')
+	{
+		*feedback = gameUpdate;
+		return;
+	}
+	
+	if (toupper(Key) == 'E')
+	{
+		*feedback = gameFilling;
+		return;
+	}
+	
 	if (Key == SCREEN_UPDATE)
 	{
 		*feedback = gameStart;	
 		return;
 	}
+	
 	if ((Key==224)||(Key==0)) return;
 	
 	if ((Key == KEY_ESCAPE)||((*feedback==gameInactive)&&(Key!=KEY_ARROW_RIGHT)))
 	{
-		pauseMenu();
+		if(*feedback==gameInactive) unpauseMenu();
+		else pauseMenu();
 		mainMenuDraw();
 		response = &Menu::mainMenuResponse;
 		*feedback = gameInactive;	
 	}
 	
-	if (*feedback==gamePaused)
+	if (Key == KEY_SPACE)
 	{
-		*feedback = gameActive;
-	}
-	else if (Key == KEY_SPACE)
-	{
-		*feedback = gamePaused;
+		if (*feedback==gamePaused) *feedback = gameActive;
+		else *feedback = gamePaused;
 	}
 
-	if ((Key==KEY_ARROW_RIGHT)&&(*feedback!=gameInactive))
+	if ((Key==KEY_ARROW_RIGHT)&&(*feedback==gameActive))
 	{
 		*feedback = gameSkip;
 	}
@@ -386,7 +402,7 @@ void Menu::Help()
 void Menu::helpDraw()
 {
 	
-	char*rules[]=
+	char *text[][150]={
 	{
 		"The Game of Life is a cellular automaton devised by the British mathematician John Horton Conway in 1970.",
 		"",
@@ -394,7 +410,7 @@ void Menu::helpDraw()
 		"requiring no further input. One interacts with the Game of Life by creating an initial configuration",
 		"and observing how it evolves, or, for advanced players, by creating patterns with particular properties.",
 		"",
-		"The universe of the Game of Life is a two-dimensional orthogonal grid of square cells, each of which is in one of two possible states, alive or dead.",
+		"The Game of Life is a two-dimensional orthogonal grid of cells, each of which is in one of two possible states, alive or dead.",
 		"Every cell interacts with its eight neighbours, which are the cells that are horizontally, vertically, or diagonally adjacent.", 
 		"",
 		"At each step in time, the following transitions occur:",
@@ -402,25 +418,23 @@ void Menu::helpDraw()
 		"2.Any live cell with two or three live neighbours lives on to the next generation.",
 		"3.Any live cell with more than three live neighbours dies, as if by overpopulation.",
 		"4.Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction."
-	};
-	
-	char*controls[]=
+	},
 	{
+		"Controls are simple",
 		"",
+		"In-game controls:",
+		"SPACE       - pause/unpause",
+		"RIGHT ARROW - speed up",
+		"ESCAPE      - main menu",
+		"R           - restart",
+		"E           - edit initial generation",
 		"",
-		"",
-		"",
-		"",
-		"",
-		"",
-		"",
-		"",
-		"",
-		"",
-		"",
+		"In filling mode",
+		"X           - change cell state",
+		"BACKSPACE   - ",
 		"",
 		""
-	};
+	}};
 	
 	
 	int m = CONSOLE_HEIGHT / (2*num_of_elements);
@@ -454,7 +468,7 @@ void Menu::helpDraw()
 	for(int i = 0; i<14; i++)
 	{
 		SetConsoleCursorPosition(h,cc);
-		cout<<rules[i];
+		printf("%-150s",text[selected_element][i]);
 		cc.Y++;
 	}
 	
@@ -552,10 +566,8 @@ HANDLE setup()
 
 bool ScreenChanges(HANDLE h)
 {
-	
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
     int columns, rows;
-		
 
    	GetConsoleScreenBufferInfo(h, &csbi);
     columns        = CONSOLE_WIDTH;
@@ -580,19 +592,63 @@ bool ScreenChanges(HANDLE h)
 }
 
 
+
+void filling(HANDLE h,Field &field, Menu &menu)
+{
+	int shift=0;
+	COORD corner={(CONSOLE_WIDTH - menu.getSettings().width)/2, (CONSOLE_HEIGHT - menu.getSettings().height)/2};
+	COORD cc ={0,0};
+	field.consolePrint("Set first generation then press enter");
+	
+	while(1) if(kbhit())
+	{
+		SetConsoleTextAttribute(h,ATTR1);
+		SetConsoleCursorPosition(h,{cc.X+corner.X,cc.Y+corner.Y});
+		if (field.getCell(cc.X,cc.Y)) cout << "X";
+		else cout << " ";
+		char Key = getch();
+		switch(Key)
+		{
+			case KEY_ARROW_DOWN:
+				cc.Y = (cc.Y+1)%menu.getSettings().height; 
+				if (shift) field.setCell(cc.X,cc.Y);       break;
+			case KEY_ARROW_UP:
+				cc.Y = (cc.Y-1+menu.getSettings().height)%menu.getSettings().height;
+				if (shift) field.setCell(cc.X,cc.Y); break;
+			case KEY_ARROW_RIGHT:
+				cc.X = (cc.X+1)%menu.getSettings().width;
+				if (shift) field.setCell(cc.X,cc.Y);		   break;
+			case KEY_ARROW_LEFT:
+				cc.X = (cc.X-1+menu.getSettings().width)%menu.getSettings().width; 
+				if (shift) field.setCell(cc.X,cc.Y); break;
+			case KEY_SHIFT: shift = !shift; break;
+			case 'X':
+			case 'x':
+				field.setCell(cc.X,cc.Y);
+				break;
+			case KEY_ENTER:
+				field.initialize();
+				return;
+			case KEY_ESCAPE: menu.gameResponse(KEY_ESCAPE); return;
+		}
+		SetConsoleTextAttribute(h,ATTR5);
+		SetConsoleCursorPosition(h,{cc.X+corner.X,cc.Y+corner.Y});
+		if (field.getCell(cc.X,cc.Y)) cout << "X";
+		else cout << " ";
+	}
+	
+}
+
+
 int main()
 {
 
 	SMALL_RECT src;
-	COORD crd;
+	COORD crd, corner,cc;
     int columns, rows;
     int lasttime;
 	HANDLE h = setup();
 	
-//	CONSOLE_FONT_INFOEX csi;
-//	GetCurrentConsoleFontEx(h,FALSE,&csi)
-//	MIN_CONSOLE_WIDTH csi.dwFontSize.X *53
-//	csi.dwFontSize.Y *25
 	
 	int flag = gameInactive;
 
@@ -611,26 +667,37 @@ int main()
 		
 		if (_kbhit())
 		{
-			(menu.*menu.response)(_getch());
+			(menu.*menu.response)(getch());
 		}
 		
 		switch (flag)
 		{	
-		
+			case gameFilling:
+				if (field.getTurn()==0)
+				{
+					flag = gamePaused;
+					filling(h,field,menu);
+					field.consolePrint("Press space to start   ");
+				}
+				else flag = gamePaused;
+				break;
+				
 			case gameUpdate:
 				field.setSettings(menu.getSettings());
+				if (menu.getSettings().pattern==Custom) flag = gameFilling;
+				else 									flag = gameStart; 
 				
 			case gameStart:
-				if  (menu.getSettings().height < ((CONSOLE_HEIGHT/5 -1)*5)) crd.Y = ((CONSOLE_HEIGHT/5 -1)*5)-1;
-				else crd.Y = menu.getSettings().height;
-				if  (menu.getSettings().width < ((CONSOLE_WIDTH/5 -1)*5)) crd.Y = ((CONSOLE_WIDTH/5 -1)*5)-1;
-				else crd.Y = menu.getSettings().width;
-				src = {0, 0, crd.X, crd.Y};
-				SetConsoleScreenBufferSize (h, crd);
-				SetConsoleWindowInfo (h, TRUE, &src);
+				
+				//if  (menu.getSettings().height > ((CONSOLE_HEIGHT/5 -1)*5)) crd.Y = menu.getSettings().height+2;
+				//if  (menu.getSettings().width > ((CONSOLE_WIDTH/5 -1)*5)) crd.X = menu.getSettings().width;
+				//src = {0, 0, crd.X-1, crd.Y-1};
+				//SetConsoleWindowInfo (h, TRUE, &src);
+				
+				SetConsoleTextAttribute(h, ATTR4);
 				system("cls");
-				field.consoleInitialize();
-				flag = gamePaused;
+				field.consoleInitialize("Press space to start");
+				if (flag==gameStart) flag = gamePaused;
 				lasttime = clock();
 				break;
 			
@@ -638,15 +705,19 @@ int main()
 				if (clock() - lasttime < 50) break;
 				lasttime = clock();
 				if (field.refresh()) field.consolePrint();
-				else flag = gameInactive;
+				else 
+				{
+					flag = gameInactive;
+					field.consolePrint("Game over! Press any key");
+				}
 				break;
 				
 			case gameSkip:
-				for(int i=0;i<3;i++)
+				for(int i=0;i<4;i++)
 					if (!field.refresh()) 
 					{
 						flag = gameInactive;
-						field.consolePrint();
+						field.consolePrint("Game over! Press any key");
 						break;
 					}
 				if (flag==gameSkip) flag = gameActive;
