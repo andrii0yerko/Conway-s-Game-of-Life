@@ -1,3 +1,4 @@
+//Field.cpp
 #include <iostream>
 #include <windows.h>
 #include <stdlib.h>
@@ -16,11 +17,9 @@ class Field
 		int **turn, **buffer;
 		int **status, **nextstatus;
 		int **consoleBuffer;
-		
-		int checkNeighbors(int, int);
+
 		void neighborsstat(int i, int j, int**);
-		
-		
+			
 		int** createEmptyArray();
 		void arrcpy(int**,int**);
 		void del(int**);
@@ -222,7 +221,7 @@ void Field::consoleInitialize(char* message=NULL)
 	SetConsoleTextAttribute(h, ATTR4);
 	system("cls");
 	
-	COORD corner={(CONSOLE_WIDTH - width)/2, (CONSOLE_HEIGHT - height)/2};
+	COORD corner={(CONSOLE_WIDTH - width)/2, (CONSOLE_HEIGHT - height)/2+1};
 	COORD cc = corner;
 	cc.Y--;
 	SetConsoleTextAttribute(h, ATTR4);
@@ -245,12 +244,13 @@ void Field::consoleInitialize(char* message=NULL)
 
 void Field::consolePrint(char* message="")
 {
-	COORD corner={(CONSOLE_WIDTH - width)/2, (CONSOLE_HEIGHT - height)/2};
+	COORD corner={(CONSOLE_WIDTH - width)/2, (CONSOLE_HEIGHT - height)/2+1};
 	COORD cc = corner;
 	cc.Y--;
 	SetConsoleTextAttribute(h, ATTR4);
 	SetConsoleCursorPosition(h,cc);
-	cout << "Turn:" << turnNumber <<" "<< message <<"                   ";
+	printf("Turn:%d %-*s",turnNumber,CONSOLE_WIDTH/2,message);
+	//cout << "Turn:" << turnNumber <<" "<< message;
 	cc = corner;
 	SetConsoleTextAttribute(h, ATTR1);
 	for (int i=0; i < this->height; i++)

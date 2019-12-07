@@ -1,3 +1,4 @@
+//Menu.cpp
 #include <iostream>
 #include <conio.h>
 #include <stdio.h>
@@ -8,7 +9,6 @@
 
 #include "constants.h"
 #include "Field.cpp"
-
 
 char logo[17][28] = { 
 " XXX     XXX  X   X  XXXXX",
@@ -33,14 +33,10 @@ char logo[17][28] = {
 #define num_of_settings_elements 5
 #define num_of_patterns 6
 
-//////TO DO LIST
-// custom initial pattern
-
 class Menu
 {
 	public:
 		Menu(HANDLE, int*);
-		~Menu();
 		
 		void Restart();
 		void Game();
@@ -87,7 +83,7 @@ class Menu
 		int selected_element = 0;
 		int *feedback;
 		HANDLE h;
-		Settings_struct settings = {25, 80, Random};
+		Settings_struct settings = {25, 80, Rpentomino};
 		Settings_struct tmp_settings;
 				
 };
@@ -104,10 +100,9 @@ Menu::Menu(HANDLE hndl, int *a)
 		fscanf(f,"%d%d%d",&settings.height,&settings.width,&settings.pattern);
 	}
 	
-//	if ( settings.height > (CONSOLE_HEIGHT/5 -1)*5) settings.height -= settings.height - (CONSOLE_HEIGHT/5 -1)*5;
-//	if ( settings.width > (CONSOLE_WIDTH/5-1)*5) settings.width  -= settings.width - (CONSOLE_WIDTH/5-1)*5;
+	if ( settings.height > (MAX_CONSOLE_HEIGHT/5)*5) settings.height -= settings.height - (MAX_CONSOLE_HEIGHT/5)*5;
+	if ( settings.width > (MAX_CONSOLE_WIDTH/5-1)*5) settings.width  -= settings.width - (MAX_CONSOLE_WIDTH/5-1)*5;
 }
-Menu::~Menu(){}
 
 
 void Menu::pauseMenu()
@@ -127,13 +122,6 @@ void Menu::unpauseMenu()
 
 void Menu::mainMenuDraw() 
 {
-	/*
-	COORD crd = {CONSOLE_WIDTH-1, CONSOLE_HEIGTH-1};
-	SMALL_RECT src = {0, 0, crd.X, crd.Y};
-	SetConsoleScreenBufferSize (h, crd);
-	SetConsoleWindowInfo (h, TRUE, &src);	
-	*/
-	
 	system("cls");
 	SetConsoleTextAttribute(h, ATTR1);
 	COORD cc;
@@ -306,8 +294,8 @@ void Menu::settingsResponse(int Key)
 		{
 			switch (selected_element)
 			{
-				case 0: settings.height  = 10+(settings.height-10+5)%(((CONSOLE_HEIGHT-2)/5 -1)*5);break;
-				case 1: settings.width   = 10+(settings.width-10+5)%((CONSOLE_WIDTH/5-1)*5);break;
+				case 0: settings.height  = 10+(settings.height-10+5)%(((MAX_CONSOLE_HEIGHT-2)/5 -1)*5);break;
+				case 1: settings.width   = 40+(settings.width-40+5)%(((MAX_CONSOLE_WIDTH-40-1)/5)*5);break;
 				case 2: settings.pattern = (settings.pattern+1)%num_of_patterns;
 			}
 			settingsDraw();
@@ -317,8 +305,8 @@ void Menu::settingsResponse(int Key)
 		{
 			switch (selected_element)
 			{
-				case 0: settings.height  = 10+(settings.height-10-5+((CONSOLE_HEIGHT-2)/5 -1)*5)%( ((CONSOLE_HEIGHT-2)/5 -1)*5);break;
-				case 1: settings.width   = 10+(settings.width-10-5+(CONSOLE_WIDTH/5-1)*5)%( (CONSOLE_WIDTH/5-1)*5);break;
+				case 0: settings.height  = 10+(settings.height-10-5+((MAX_CONSOLE_HEIGHT-2)/5 -1)*5)%( ((MAX_CONSOLE_HEIGHT-2)/5 -1)*5);break;
+				case 1: settings.width   = 40+(settings.width-40-5+((MAX_CONSOLE_WIDTH-40-1)/5)*5)%( ((MAX_CONSOLE_WIDTH-40-1)/5)*5);break;
 				case 2: settings.pattern = (settings.pattern-1+num_of_patterns)%num_of_patterns;
 			}
 			settingsDraw();
@@ -326,8 +314,6 @@ void Menu::settingsResponse(int Key)
 		}	
 		case SCREEN_UPDATE:
 		{
-			if ( settings.height > (CONSOLE_HEIGHT/5 -1)*5) settings.height -= settings.height - (CONSOLE_HEIGHT/5 -1)*5;
-			if ( settings.width > (CONSOLE_WIDTH/5-1)*5) settings.width  -= settings.width - (CONSOLE_WIDTH/5-1)*5;
 			settingsDraw();
 			break;
 		}
@@ -388,6 +374,7 @@ void Menu::gameResponse(int Key)
 	{
 		*feedback = gameSkip;
 	}
+	
 }
 
 
@@ -431,7 +418,7 @@ void Menu::helpDraw()
 		"",
 		"In filling mode",
 		"X           - change cell state",
-		"BACKSPACE   - ",
+		"BACKSPACE   - ñhange all cell states on the cursor path",
 		"",
 		""
 	}};
@@ -551,15 +538,11 @@ HANDLE setup()
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	SetConsoleScreenBufferSize (h, {GetSystemMetrics(SM_CXMAXIMIZED), GetSystemMetrics(SM_CYMAXIMIZED)});
 	GetConsoleScreenBufferInfo(h, &csbi);
+	MAX_CONSOLE_WIDTH  = csbi.dwMaximumWindowSize.X;
+	MAX_CONSOLE_HEIGHT = csbi.dwMaximumWindowSize.Y;
 	SetConsoleScreenBufferSize (h, csbi.dwMaximumWindowSize);
 	
 	SetConsoleTextAttribute(h, ATTR2);
-	/*
-	COORD crd = {CONSOLE_WIDTH-1, CONSOLE_HEIGTH-1};
-	SMALL_RECT src = {0, 0, crd.X, crd.Y};
-	SetConsoleScreenBufferSize (h, crd);
-	SetConsoleWindowInfo (h, TRUE, &src);
-	*/
 	return h;
 }
 
@@ -593,10 +576,10 @@ bool ScreenChanges(HANDLE h)
 
 
 
-void filling(HANDLE h,Field &field, Menu &menu)
+bool filling(HANDLE h,Field &field, Menu &menu)
 {
 	int shift=0;
-	COORD corner={(CONSOLE_WIDTH - menu.getSettings().width)/2, (CONSOLE_HEIGHT - menu.getSettings().height)/2};
+	COORD corner={(CONSOLE_WIDTH - menu.getSettings().width)/2, (CONSOLE_HEIGHT - menu.getSettings().height)/2+1};
 	COORD cc ={0,0};
 	field.consolePrint("Set first generation then press enter");
 	
@@ -628,8 +611,11 @@ void filling(HANDLE h,Field &field, Menu &menu)
 				break;
 			case KEY_ENTER:
 				field.initialize();
-				return;
-			case KEY_ESCAPE: menu.gameResponse(KEY_ESCAPE); return;
+				return 1;
+			case KEY_ESCAPE: 
+				field.initialize(); 
+				menu.gameResponse(KEY_ESCAPE); 
+				return 0;
 		}
 		SetConsoleTextAttribute(h,ATTR5);
 		SetConsoleCursorPosition(h,{cc.X+corner.X,cc.Y+corner.Y});
@@ -648,7 +634,6 @@ int main()
     int columns, rows;
     int lasttime;
 	HANDLE h = setup();
-	
 	
 	int flag = gameInactive;
 
@@ -676,8 +661,7 @@ int main()
 				if (field.getTurn()==0)
 				{
 					flag = gamePaused;
-					filling(h,field,menu);
-					field.consolePrint("Press space to start   ");
+					if (filling(h,field,menu)) field.consolePrint("Press space to start   ");
 				}
 				else flag = gamePaused;
 				break;
@@ -689,10 +673,10 @@ int main()
 				
 			case gameStart:
 				
-				//if  (menu.getSettings().height > ((CONSOLE_HEIGHT/5 -1)*5)) crd.Y = menu.getSettings().height+2;
-				//if  (menu.getSettings().width > ((CONSOLE_WIDTH/5 -1)*5)) crd.X = menu.getSettings().width;
-				//src = {0, 0, crd.X-1, crd.Y-1};
-				//SetConsoleWindowInfo (h, TRUE, &src);
+				if  (menu.getSettings().height > (CONSOLE_HEIGHT-2)) crd.Y = menu.getSettings().height+2;
+				if  (menu.getSettings().width > (CONSOLE_WIDTH)) crd.X = menu.getSettings().width;
+				src = {0, 0, crd.X-1, crd.Y-1};
+				SetConsoleWindowInfo (h, TRUE, &src);
 				
 				SetConsoleTextAttribute(h, ATTR4);
 				system("cls");

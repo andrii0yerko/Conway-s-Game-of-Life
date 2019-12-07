@@ -1,3 +1,4 @@
+//constants.h
 #ifndef _DEFINES_
 #define _DEFINES_
 
@@ -21,6 +22,8 @@
 int MIN_CONSOLE_WIDTH = 60;
 int MIN_CONSOLE_HEIGHT = 25;
 
+int MAX_CONSOLE_WIDTH;
+int MAX_CONSOLE_HEIGHT;
 
 int CONSOLE_WIDTH = 80;
 int CONSOLE_HEIGHT = 31;
